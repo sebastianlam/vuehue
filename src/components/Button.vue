@@ -1,41 +1,126 @@
-<script setup lang="ts">
-defineProps<{
-  msg: string;
-}>();
-</script>
-
 <template>
-  <div class="greetings">
-    <h1 class="green">{{ msg }}</h1>
-    <h3>
-      You’ve successfully created a project with
-      <a target="_blank" href="https://vitejs.dev/">Vite</a> +
-      <a target="_blank" href="https://vuejs.org/">Vue 3</a>. What's next?
-    </h3>
-  </div>
+  <Renderer ref="renderer" resize :pointer="{ onMove: updateTilt }">
+    <Camera :position="{ y: -20, z: 10 }" :look-at="{ x: 0, y: 0, z: 0 }" />
+    <Scene background="#ffffff">
+      <AmbientLight />
+      <PointLight ref="light" :position="{ y: 0, z: 20 }" />
+      <InstancedMesh ref="imesh" :count="NUM_INSTANCES" :position="{ y: 20, z: 10 }">
+        <BoxGeometry :size="SIZE" />
+        <PhongMaterial :props="{ vertexColors: true }" />
+      </InstancedMesh>
+    </Scene>
+    <EffectComposer>
+      <RenderPass />
+      <FXAAPass />
+      <TiltShiftPass :gradient-radius="tiltRadius" :start="{ x: 0, y: this.tiltY }" :end="{ x: 100, y: this.tiltY }" />
+    </EffectComposer>
+  </Renderer>
 </template>
 
-<style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  top: -10px;
-}
+<script>
+import { InstancedBufferAttribute, Object3D } from 'three';
+import {
+  AmbientLight,
+  BoxGeometry,
+  Camera,
+  EffectComposer,
+  FXAAPass,
+  InstancedMesh,
+  PhongMaterial,
+  PointLight,
+  Renderer,
+  RenderPass,
+  Scene,
+  TiltShiftPass,
+} from 'troisjs';
 
-h3 {
-  font-size: 1.2rem;
-}
 
-.greetings h1,
-.greetings h3 {
-  margin-top: 2rem;
-  text-align: center;
-}
+export default {
+  components: {
+    AmbientLight,
+    BoxGeometry,
+    Camera,
+    EffectComposer,
+    FXAAPass,
+    InstancedMesh,
+    PhongMaterial,
+    PointLight,
+    Renderer,
+    RenderPass,
+    Scene,
+    TiltShiftPass,
+  },
+  setup() {
+    const SIZE = 1.6, NX = 25, NY = 25, PADDING = 1;
+    const SIZEP = SIZE + PADDING;
+    const W = NX * SIZEP - PADDING;
+    const H = NY * SIZEP - PADDING;
+    return {
+      SIZE, NX, NY, PADDING,
+      SIZEP, W, H,
+      NUM_INSTANCES: NX * NY,
+    };
+  },
+  data() {
+    return {
+      tiltRadius: 100,
+      tiltY: 100,
+    };
+  },
+  computed: {
+    tiltStart() { return { x: 0, y: this.tiltY }; },
+    tiltEnd() { return { x: 100, y: this.tiltY }; },
+  },
+  mounted() {
+    this.renderer = this.$refs.renderer;
+    this.size = this.renderer.three.size;
+    this.imesh = this.$refs.imesh.mesh;
 
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
-  }
-}
-</style>
+    // init color attribute
+    const colors = [];
+    for (let i = 0; i < this.NUM_INSTANCES; i++) {
+      const c = Math.random();
+      colors.push(c, c, c);
+    }
+    this.imesh.geometry.setAttribute('color', new InstancedBufferAttribute(new Float32Array(colors), 3));
+
+    this.tiltRadius = this.size.height / 3;
+    this.tiltY = this.size.height / 2;
+    this.renderer.onResize(this.updateTilt);
+
+    this.dummy = new Object3D();
+    this.renderer.onBeforeRender(this.animate);
+  },
+  methods: {
+    animate() {
+      this.updateInstanceMatrix();
+    },
+    updateTilt({ positionN }) {
+      this.tiltRadius = this.size.height / 3;
+      this.tiltY = (positionN.y + 1) * 0.5 * this.size.height;
+    },
+    updateInstanceMatrix() {
+      const x0 = -this.W / 2 + this.PADDING;
+      const y0 = -this.H / 2 + this.PADDING;
+      const time = Date.now() * 0.0001;
+      const noise = 0.005;
+      let x, y, nx, ny, rx, ry;
+      for (let i = 0; i < this.NX; i++) {
+        for (let j = 0; j < this.NY; j++) {
+          x = x0 + i * this.SIZEP;
+          y = y0 + j * this.SIZEP;
+          nx = x * noise;
+          ny = y * noise;
+          rx = Math.PI;
+          ry = Math.PI;
+          this.dummy.position.set(x, y, -10);
+          this.dummy.rotation.set(rx, ry, 0);
+          this.dummy.updateMatrix();
+          this.imesh.setMatrixAt(i * this.NY + j, this.dummy.matrix);
+        }
+      }
+      this.imesh.instanceMatrix.needsUpdate = true;
+    },
+  },
+};
+</script>
