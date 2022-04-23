@@ -1,5 +1,5 @@
 <template>
-  <Renderer ref="renderer" antialias resize :orbit-ctrl="{ autoRotate: true, enableDamping: true, dampingFactor: 0.05 }" :pointer="{ onMove: updateTilt }">
+  <Renderer ref="renderer" resize antialias :orbit-ctrl="{ autoRotate: true, enableDamping: true, dampingFactor: 0.05 }" :pointer="{ onMove: updateTilt }">
     <Camera :position="{ y: -20, z: 10 }" :look-at="{ x: 0, y: 0, z: 0 }" />
     <Scene background="#ffffff">
       <AmbientLight />
@@ -51,7 +51,7 @@ export default {
     TiltShiftPass,
   },
   setup() {
-    const SIZE = 1.6, NX = 25, NY = 25, PADDING = 1;
+    const SIZE = 1.6, NX = 200, NY = 200, PADDING = 0.1;
     const SIZEP = SIZE + PADDING;
     const W = NX * SIZEP - PADDING;
     const H = NY * SIZEP - PADDING;
