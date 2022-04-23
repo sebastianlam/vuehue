@@ -1,5 +1,5 @@
 <template>
-  <Renderer ref="renderer" resize :pointer="{ onMove: updateTilt }">
+  <Renderer ref="renderer" antialias resize :orbit-ctrl="{ autoRotate: true, enableDamping: true, dampingFactor: 0.05 }" :pointer="{ onMove: updateTilt }">
     <Camera :position="{ y: -20, z: 10 }" :look-at="{ x: 0, y: 0, z: 0 }" />
     <Scene background="#ffffff">
       <AmbientLight />
@@ -80,7 +80,9 @@ export default {
     const colors = [];
     for (let i = 0; i < this.NUM_INSTANCES; i++) {
       const c = Math.random();
-      colors.push(c, c, c);
+      const cc = Math.random();
+      const ccc = Math.random();
+      colors.push(c, cc, ccc);
     }
     this.imesh.geometry.setAttribute('color', new InstancedBufferAttribute(new Float32Array(colors), 3));
 
@@ -89,6 +91,7 @@ export default {
     this.renderer.onResize(this.updateTilt);
 
     this.dummy = new Object3D();
+    
     this.renderer.onBeforeRender(this.animate);
   },
   methods: {
@@ -103,7 +106,7 @@ export default {
       const x0 = -this.W / 2 + this.PADDING;
       const y0 = -this.H / 2 + this.PADDING;
       const time = Date.now() * 0.0001;
-      const noise = 0.005;
+      const noise = 0.5;
       let x, y, nx, ny, rx, ry;
       for (let i = 0; i < this.NX; i++) {
         for (let j = 0; j < this.NY; j++) {
