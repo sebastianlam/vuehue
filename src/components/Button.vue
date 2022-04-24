@@ -51,7 +51,7 @@ export default {
     TiltShiftPass,
   },
   setup() {
-    const SIZE = 1.6, NX = 200, NY = 200, PADDING = 0.1;
+    const SIZE = 1.6, NX = 26, NY = 26, PADDING = 1;
     const SIZEP = SIZE + PADDING;
     const W = NX * SIZEP - PADDING;
     const H = NY * SIZEP - PADDING;
